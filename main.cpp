@@ -450,7 +450,6 @@ void Sharpen(const cv::Mat &myImage, cv::Mat &Result)
 
 
 }
-
 // ! ========== [opencv_test5()]
 
 // ! ========== [opencv_test6()]
@@ -458,6 +457,7 @@ void opencv_test6(const int *argc , char **argv)
 {
     if (*argc < 2){
         std::cout << " usage: [program] [image_name] " << std::endl;
+        return;
     }
 
     //! [3 channel imagel]
@@ -471,8 +471,8 @@ void opencv_test6(const int *argc , char **argv)
 //        (*it)[1] = (*it)[2];
 //        (*it)[2] = (*it)[0];
     }
-//    cv::imshow("ouput1" , *img);
-//    cv::waitKey(0);
+    cv::imshow("ouput1" , *img);
+    cv::waitKey(0);
     //! [3 channel imagel]
 
     //! [a single channel grey image]
@@ -483,8 +483,8 @@ void opencv_test6(const int *argc , char **argv)
         std::cout << " grey : " << *itg << std::endl;
 //        *itg *= 2;
     }
-//    cv::imshow("output2" , *grey);
-//    cv::waitKey(0);
+    cv::imshow("output2" , *grey);
+    cv::waitKey(0);
     //! [a single channel grey image]
 
     //! [CV_32 -> CV_8U]
@@ -509,7 +509,45 @@ void opencv_test6(const int *argc , char **argv)
 }
 // ! ========== [opencv_test6()]
 
+// ! ========== [opencv_test7()]
+void opencv_test7(const int *argc , char **argv)
+{
+    if (*argc != 3){
+        std::cout << "usage : [program] [image_name1] [image_name2] " << std::endl;
+        return ;
+    }
 
+    double beta , input , alpha = 0.5;
+    cv::Mat *src1 = new cv::Mat();
+    cv::Mat *src2 = new cv::Mat();
+    cv::Mat *dst = new cv::Mat();
+    std::cout << " Simple Linear Blender " << std::endl;
+    std::cout << " ------------------- " << std::endl;
+    std::cout << "* Enter alpha [0-1]: " ;
+    std::cin >> input;
+
+    if (input >= 0 && input <= 1){
+        alpha = input ;
+    }
+    *src1 = cv::imread(argv[1]);
+    *src2 = cv::imread(argv[2]);
+    if (src1->empty() || src2->empty()){
+        std::cout << "Error loading src1 or src2 " << std::endl;
+        deletePtr(src1 , "src1" , __FUNCTION__ , __LINE__);
+        deletePtr(src2 , "src2" , __FUNCTION__ , __LINE__);
+        deletePtr(dst , "dst" , __FUNCTION__ , __LINE__);
+        return ;
+    }
+    beta = (1.0 - alpha);
+    cv::addWeighted(*src1 , alpha , *src2 , beta , 0.0 , *dst);
+    cv::imshow("Linear Blend" , *dst);
+    cv::waitKey(0);
+    std::cout << "正常退出时，记得释放指针！" << std::endl;
+    deletePtr(src1 , "src1" , __FUNCTION__ , __LINE__);
+    deletePtr(src2 , "src2" , __FUNCTION__ , __LINE__);
+    deletePtr(dst , "dst" , __FUNCTION__ , __LINE__);
+}
+// ! ========== [opencv_test7()]
 int main(int argc , char *argv[])
 {
     //opencv_test1();  // 将cv::Mat 写入文件
@@ -517,7 +555,8 @@ int main(int argc , char *argv[])
     //opencv_test3();  //点的操作 point
     //opencv_test4(&argc , argv);   //扫描图片 , 最快的扫描图片方法是cv::LUT()函数 ，在教程中的介绍
     //opencv_test5(&argc , argv);  //矩阵上的掩码操作
-    opencv_test6(&argc , argv);
+    //opencv_test6(&argc , argv);  //迭代像素点
+    opencv_test7(&argc , argv);
 
     return 0;
 }
