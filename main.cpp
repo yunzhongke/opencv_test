@@ -252,7 +252,6 @@ void opencv_test4(const int *argc , char **argv)
         return;
 }
 
-//! [scan-c]
 cv::Mat& ScanImageAndReduceC(cv::Mat& I, const uchar* const table)
 {
     // accept only char type matrices
@@ -281,9 +280,6 @@ cv::Mat& ScanImageAndReduceC(cv::Mat& I, const uchar* const table)
     }
     return I;
 }
-//! [scan-c]
-
-//! [scan-iterator]
 cv::Mat& ScanImageAndReduceIterator(cv::Mat& I, const uchar* const table)
 {
     // accept only char type matrices
@@ -313,9 +309,6 @@ cv::Mat& ScanImageAndReduceIterator(cv::Mat& I, const uchar* const table)
 
     return I;
 }
-//! [scan-iterator]
-
-//! [scan-random]
 cv::Mat& ScanImageAndReduceRandomAccess(cv::Mat& I, const uchar* const table)
 {
     // accept only char type matrices
@@ -349,7 +342,6 @@ cv::Mat& ScanImageAndReduceRandomAccess(cv::Mat& I, const uchar* const table)
 
     return I;
 }
-//! [scan-random]
 
 // ! ================ [opencv_test4()]
 
@@ -461,14 +453,71 @@ void Sharpen(const cv::Mat &myImage, cv::Mat &Result)
 
 // ! ========== [opencv_test5()]
 
+// ! ========== [opencv_test6()]
+void opencv_test6(const int *argc , char **argv)
+{
+    if (*argc < 2){
+        std::cout << " usage: [program] [image_name] " << std::endl;
+    }
+
+    //! [3 channel imagel]
+    cv::Mat *img = new cv::Mat();
+    *img = cv::imread(argv[1]);
+    //cv::Vec3b *intensity = img->at<cv::Vec3b>(cv::Point(x , y));
+    cv::MatIterator_<cv::Vec3b> it;
+    for (it = img->begin<cv::Vec3b>() ; it != img->end<cv::Vec3b>() ; ++it){
+        std::cout << "B : " << (*it)[0] << " , G : " << (*it)[1] << " , R : " << (*it)[2] << std::endl;
+//        (*it)[0] = (*it)[1];
+//        (*it)[1] = (*it)[2];
+//        (*it)[2] = (*it)[0];
+    }
+//    cv::imshow("ouput1" , *img);
+//    cv::waitKey(0);
+    //! [3 channel imagel]
+
+    //! [a single channel grey image]
+    cv::Mat *grey = new cv::Mat();
+    *grey = cv::imread(argv[1] , cv::IMREAD_GRAYSCALE);
+    cv::MatIterator_<uchar> itg;
+    for (itg = grey->begin<uchar>() ; itg != grey->end<uchar>() ; ++itg){
+        std::cout << " grey : " << *itg << std::endl;
+//        *itg *= 2;
+    }
+//    cv::imshow("output2" , *grey);
+//    cv::waitKey(0);
+    //! [a single channel grey image]
+
+    //! [CV_32 -> CV_8U]
+    cv::Mat *img2 = new cv::Mat();
+    *img2 = cv::imread(argv[1]);
+    cv::Mat grey2;
+    cv::cvtColor(*img2 , grey2 , cv::COLOR_BGR2BGRA);
+    cv::Mat sobelx;
+    cv::Sobel(grey2 , sobelx , CV_32F , 1 , 0);
+    double minVal , maxVal;
+    cv::minMaxLoc(sobelx , &minVal , &maxVal);
+    cv::Mat draw;
+    sobelx.convertTo(draw , CV_8U , 255.0 / (maxVal - minVal) , - minVal * 255.0 / (maxVal - minVal) );
+    cv::imshow("output3" , draw);
+    cv::waitKey(0);
+    //! [CV_32 -> CV_8U]
+
+    std::cout << "正常退出时，记得释放指针！" << std::endl;
+    deletePtr(img , "img" , __FUNCTION__ , __LINE__);
+    deletePtr(grey , "grey" , __FUNCTION__ , __LINE__);
+    deletePtr(img2 , "img2" , __FUNCTION__ , __LINE__);
+}
+// ! ========== [opencv_test6()]
+
+
 int main(int argc , char *argv[])
 {
     //opencv_test1();  // 将cv::Mat 写入文件
     //opencv_test2(&argc , argv);  //彩色图片转灰色图片
     //opencv_test3();  //点的操作 point
     //opencv_test4(&argc , argv);   //扫描图片 , 最快的扫描图片方法是cv::LUT()函数 ，在教程中的介绍
-
-    opencv_test5(&argc , argv);  //矩阵上的掩码操作
+    //opencv_test5(&argc , argv);  //矩阵上的掩码操作
+    opencv_test6(&argc , argv);
 
     return 0;
 }
