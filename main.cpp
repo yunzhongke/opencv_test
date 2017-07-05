@@ -518,8 +518,8 @@ void opencv_test7(const int *argc , char **argv)
     }
 
     double beta , input , alpha = 0.5;
-    cv::Mat *src1 = new cv::Mat();
-    cv::Mat *src2 = new cv::Mat();
+    cv::Mat *image = new cv::Mat();
+    cv::Mat *new_image = new cv::Mat();
     cv::Mat *dst = new cv::Mat();
     std::cout << " Simple Linear Blender " << std::endl;
     std::cout << " ------------------- " << std::endl;
@@ -529,25 +529,140 @@ void opencv_test7(const int *argc , char **argv)
     if (input >= 0 && input <= 1){
         alpha = input ;
     }
-    *src1 = cv::imread(argv[1]);
-    *src2 = cv::imread(argv[2]);
-    if (src1->empty() || src2->empty()){
-        std::cout << "Error loading src1 or src2 " << std::endl;
-        deletePtr(src1 , "src1" , __FUNCTION__ , __LINE__);
-        deletePtr(src2 , "src2" , __FUNCTION__ , __LINE__);
+    *image = cv::imread(argv[1]);
+    *new_image = cv::imread(argv[2]);
+    if (image->empty() || new_image->empty()){
+        std::cout << "Error loading image or new_image " << std::endl;
+        deletePtr(image , "image" , __FUNCTION__ , __LINE__);
+        deletePtr(new_image , "new_image" , __FUNCTION__ , __LINE__);
         deletePtr(dst , "dst" , __FUNCTION__ , __LINE__);
         return ;
     }
     beta = (1.0 - alpha);
-    cv::addWeighted(*src1 , alpha , *src2 , beta , 0.0 , *dst);
+    cv::addWeighted(*image , alpha , *new_image , beta , 0.0 , *dst);
     cv::imshow("Linear Blend" , *dst);
     cv::waitKey(0);
     std::cout << "正常退出时，记得释放指针！" << std::endl;
-    deletePtr(src1 , "src1" , __FUNCTION__ , __LINE__);
-    deletePtr(src2 , "src2" , __FUNCTION__ , __LINE__);
+    deletePtr(image , "image" , __FUNCTION__ , __LINE__);
+    deletePtr(new_image , "new_image" , __FUNCTION__ , __LINE__);
     deletePtr(dst , "dst" , __FUNCTION__ , __LINE__);
 }
 // ! ========== [opencv_test7()]
+
+// ! ========== [opencv_test8()]
+void basicLinearTransform(const cv::Mat *img , cv::Mat **out_img , const double alpha_ , const int beta_);
+void on_linear_transform_alpha_trackbar( int , void *params);
+void on_linear_transform_beta_trackbar( int , void *params);
+void on_gamma_correction_trackbar( int , void *params);
+void gammaCorrection(const cv::Mat *img , cv::Mat **out_img , const double gamma_);
+
+struct Params
+{
+    cv::Mat *img_original;
+    cv::Mat *img_corrected;
+    cv::Mat *img_gamma_corrected;
+    int alpha_;
+    int beta_;
+    int gamma_cor_;
+};  // 传参用
+void opencv_test8(const int *argc , char **argv)
+{
+
+    if (*argc != 2){
+        std::cout << "usage : [program] [image]" << std::endl;
+        return;
+    }
+
+    int alpha = 100 , beta = 100 , gamma_cor = 100;
+
+    Params *param1 = new Params();
+    param1->img_original = new cv::Mat();
+    param1->img_corrected = new cv::Mat();
+    param1->img_gamma_corrected = new cv::Mat();
+    *param1->img_original = cv::imread(argv[1]);
+    *param1->img_corrected = cv::Mat(param1->img_original->rows , param1->img_original->cols * 2 , param1->img_original->type());
+    *param1->img_gamma_corrected = cv::Mat(param1->img_original->rows , param1->img_original->cols * 2 , param1->img_original->type());
+
+
+    cv::hconcat(*param1->img_original , *param1->img_original , *param1->img_corrected);  // cv::hconcat() 代表将多个矩阵水平连接成一个矩阵
+    cv::hconcat(*param1->img_original , *param1->img_original , *param1->img_gamma_corrected);
+
+    cv::namedWindow( "Brightness and contrast adjustments", cv::WINDOW_AUTOSIZE);
+    cv::namedWindow("Gamma correction" , cv::WINDOW_AUTOSIZE);
+
+    param1->alpha_ = alpha;
+    param1->beta_ = beta;
+    param1->gamma_cor_ = gamma_cor;
+    cv::createTrackbar("Alpha gain (contrast)" , "Brightness and contrast adjustments" , &param1->alpha_ , 500 , on_linear_transform_alpha_trackbar , (void*)param1);
+    cv::createTrackbar("Beta bias (brightness) " , "Brightness and contrast adjustments" , &param1->beta_ , 200 , on_linear_transform_beta_trackbar , (void*)param1);
+    cv::createTrackbar("Gamma correction" , "Gamma correction" , &param1->gamma_cor_ , 200 , on_gamma_correction_trackbar , (void*)param1);
+
+    while (true){
+        cv::imshow("Brightness and contrast adjustments" , *param1->img_corrected);
+        cv::imshow("Gamma correction" , *param1->img_gamma_corrected);
+
+        int c = cv::waitKey(20);
+        if (c == 27)
+            break;
+    }
+
+    cv::imwrite("linear_transform_correction.png" , *param1->img_corrected);
+    cv::imwrite("gamma_correction.png" , *param1->img_gamma_corrected);
+
+    std::cout << "正常退出时，记得释放指针！" << std::endl;
+    if (param1){
+        delete param1->img_corrected;
+        delete param1->img_gamma_corrected;
+        delete param1->img_original;
+    }
+    delete param1;
+}
+
+void basicLinearTransform(const cv::Mat *img, cv::Mat **out_img , const double alpha_, const int beta_)
+{
+    cv::Mat res;
+
+    img->convertTo(res , -1 , alpha_ , beta_);
+    cv::hconcat(*img , res , **out_img);
+}
+void gammaCorrection(const cv::Mat *img, cv::Mat **out_img , const double gamma_)
+{
+    CV_Assert(gamma_ >= 0);
+
+    //![changing-contrast-brightness-gamma-correction]
+    cv::Mat lookUpTable(1 , 256 , CV_8U);
+    uchar *p = lookUpTable.ptr();
+    for ( int i = 0; i < 256; ++i){
+        p[i] = cv::saturate_cast<uchar>(pow(i / 255.0 , gamma_) * 255.0);
+    }
+    cv::Mat res = img->clone();
+    cv::LUT(*img , lookUpTable , res);
+    //![changing-contrast-brightness-gamma-correction]
+
+    cv::hconcat(*img , res , **out_img);
+}
+void on_linear_transform_alpha_trackbar(int , void *params)
+{
+    Params *ptr = (Params *)params;
+    double alpha_value = ptr->alpha_ / 100.0;
+    int beta_value = ptr->beta_ - 100;
+    basicLinearTransform(ptr->img_original , &ptr->img_corrected , alpha_value , beta_value);
+}
+void on_linear_transform_beta_trackbar(int, void *params)
+{
+    Params *ptr = (Params *)params;
+    double alpha_value = ptr->alpha_ / 100.0;
+    int beta_value = ptr->beta_ - 100;
+    basicLinearTransform(ptr->img_original , &ptr->img_corrected , alpha_value , beta_value);
+}
+void on_gamma_correction_trackbar(int, void *params)
+{
+    Params *ptr = (Params *)params;
+    double gamma_value = ptr->gamma_cor_ / 100.0;
+    gammaCorrection(ptr->img_original , &ptr->img_gamma_corrected , gamma_value);
+}
+
+// ! ========== [opencv_test8()]
 int main(int argc , char *argv[])
 {
     //opencv_test1();  // 将cv::Mat 写入文件
@@ -556,7 +671,7 @@ int main(int argc , char *argv[])
     //opencv_test4(&argc , argv);   //扫描图片 , 最快的扫描图片方法是cv::LUT()函数 ，在教程中的介绍
     //opencv_test5(&argc , argv);  //矩阵上的掩码操作
     //opencv_test6(&argc , argv);  //迭代像素点
-    opencv_test7(&argc , argv);   // 两张图片组合显示
-
+    //opencv_test7(&argc , argv);   // 两张图片组合显示
+    opencv_test8(&argc , argv);
     return 0;
 }
