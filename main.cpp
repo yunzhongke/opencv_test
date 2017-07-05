@@ -556,7 +556,7 @@ int main(int argc , char *argv[])
     //opencv_test4(&argc , argv);   //扫描图片 , 最快的扫描图片方法是cv::LUT()函数 ，在教程中的介绍
     //opencv_test5(&argc , argv);  //矩阵上的掩码操作
     //opencv_test6(&argc , argv);  //迭代像素点
-    opencv_test7(&argc , argv);
+    opencv_test7(&argc , argv);   // 两张图片组合显示
 
     return 0;
 }
