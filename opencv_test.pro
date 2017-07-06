@@ -38,3 +38,6 @@ LIBS += -L/home/yunzhongke/work/ws_opencv/lib \
         -lopencv_videostab \
         -lopencv_viz
 
+HEADERS += \
+    common.h
+

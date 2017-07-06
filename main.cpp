@@ -8,7 +8,7 @@
 #include <sstream>
 #include <vector>
 #include <chrono>
-
+#include "common.h"
 
 template<class T>
 void deletePtr(T *ptr , const char *ptrname , const char *funname , const int line)
@@ -661,8 +661,146 @@ void on_gamma_correction_trackbar(int, void *params)
     double gamma_value = ptr->gamma_cor_ / 100.0;
     gammaCorrection(ptr->img_original , &ptr->img_gamma_corrected , gamma_value);
 }
-
 // ! ========== [opencv_test8()]
+
+// ! ========== [opencv_test9()]
+void MyEllipse(cv::Mat *img , double angle);
+void MyFilledCircle(cv::Mat *img , cv::Point center);
+void MyLine(cv::Mat *img , cv::Point start , cv::Point end);
+void MyPolygon(cv::Mat *img);
+void opencv_test9()
+{
+   char atom_window[] = "Drawing 1: Atom";
+   char rook_window[] = "Drawing 2: Rook";
+
+   cv::Mat *atom_image = new cv::Mat();
+   cv::Mat *rook_image = new cv::Mat();
+   *atom_image = cv::Mat::zeros(w , w , CV_8UC3);
+   *rook_image = cv::Mat::zeros(w , w , CV_8UC3);
+
+   MyEllipse(atom_image , 90);
+   MyEllipse(atom_image , 0);
+   MyEllipse(atom_image , 45);
+   MyEllipse(atom_image , -45);
+
+   MyFilledCircle(atom_image , cv::Point(w/2 , w/2));
+
+   MyPolygon(rook_image);
+   cv::rectangle(*rook_image , cv::Point( 0 , 7 * w / 8) ,
+                 cv::Point(w , w) , cv::Scalar( 0 ,255 , 255)
+                 , cv::FILLED , cv::LINE_8);
+
+   MyLine(rook_image , cv::Point(0 , 25 * w / 16) , cv::Point(w , 15 * w /16));
+   MyLine(rook_image , cv::Point(w / 4 , 7 * w / 8) , cv::Point(w / 4 , w));
+   MyLine(rook_image , cv::Point(w /2 , 7 * w / 8) , cv::Point(w / 2 , w));
+   MyLine(rook_image , cv::Point(3 * w / 4 , 7 * w / 8) , cv::Point(3 * w / 4 , w));
+
+   cv::imshow(atom_window , *atom_image);
+   cv::moveWindow(atom_window , 0 ,200);
+   cv::imshow(rook_window , *rook_image);
+   cv::moveWindow(rook_window , w , 200);
+   cv::waitKey(0);
+
+   std::cout << "程序正常退出 ， 记得释放指针!" << std::endl;
+   deletePtr(atom_image , "atom_image" , __func__ , __LINE__);
+   deletePtr(rook_image , "rook_image" , __func__ , __LINE__);
+}
+
+void MyEllipse(cv::Mat *img, double angle)
+{
+    int thickness = 2;
+    int lineType = 8;
+
+    cv::ellipse(*img , cv::Point( w / 2 , w /2) , cv::Size( w / 4 , w / 16)
+                , angle , 0 , 360 , cv::Scalar( 255 , 0 , 0) ,
+                thickness , lineType );
+}
+
+void MyFilledCircle(cv::Mat *img, cv::Point center)
+{
+    cv::circle(*img ,
+               center ,
+               w / 32 ,
+               cv::Scalar(0 , 0 ,255) ,
+               cv::FILLED ,
+               cv::LINE_8);
+}
+
+void MyPolygon(cv::Mat *img)
+{
+    int lineType = cv::LINE_8;
+    cv::Point rook_points[1][20];
+
+    rook_points[0][0]  = cv::Point(  w / 4 ,  7 * w / 8 );
+    rook_points[0][1]  = cv::Point(  3 * w / 4,   7 * w / 8 );
+    rook_points[0][2]  = cv::Point(  3 * w / 4,  13 * w / 16 );
+    rook_points[0][3]  = cv::Point( 11 * w / 16, 13 * w / 16 );
+    rook_points[0][4]  = cv::Point( 19 * w / 32,  3 * w / 8 );
+    rook_points[0][5]  = cv::Point(  3 * w / 4,   3 * w / 8 );
+    rook_points[0][6]  = cv::Point(  3 * w / 4,     w / 8 );
+    rook_points[0][7]  = cv::Point( 26 * w / 40,    w / 8 );
+    rook_points[0][8]  = cv::Point( 26 * w / 40,    w / 4 );
+    rook_points[0][9]  = cv::Point( 22 * w / 40,    w / 4 );
+    rook_points[0][10] = cv::Point( 22 * w / 40,    w / 8 );
+    rook_points[0][11] = cv::Point( 18 * w / 40,    w / 8 );
+    rook_points[0][12] = cv::Point( 18 * w / 40,    w / 4 );
+    rook_points[0][13] = cv::Point( 14 * w / 40,    w / 4 );
+    rook_points[0][14] = cv::Point( 14 * w / 40,    w / 8 );
+    rook_points[0][15] = cv::Point(      w / 4,     w / 8 );
+    rook_points[0][16] = cv::Point(      w / 4,   3 * w / 8 );
+    rook_points[0][17] = cv::Point( 13 * w / 32,  3 * w / 8 );
+    rook_points[0][18] = cv::Point(  5 * w / 16, 13 * w / 16 );
+    rook_points[0][19] = cv::Point(    w / 4,  13 * w / 16 );
+
+    const cv::Point *ppt[1] = {&rook_points[0][0]} ;
+    int npt = 20;
+
+    cv::fillPoly(*img , ppt , &npt , 1 , cv::Scalar( 255 , 2555 , 255) , lineType);
+}
+
+void MyLine(cv::Mat *img, cv::Point start, cv::Point end)
+{
+    int thickness = 2;
+    int lineType = cv::LINE_8;
+
+    cv::line(*img ,
+             start ,
+             end ,
+             cv::Scalar(0 , 0 , 0) ,
+             thickness ,
+             lineType);
+}
+// ! ========== [opencv_test9()]
+
+// ! ========== [opencv_test10()]
+void opencv_test10()
+{
+    cv::Mat *img = new cv::Mat(400 , 400 , CV_8UC3 , cv::Scalar(255 , 255 , 255));
+    cv::line(*img , cv::Point(20 , 40) , cv::Point(120 , 140) , cv::Scalar(255 , 0 , 0) , 3);
+    cv::rectangle(*img , cv::Point(150 , 40) , cv::Point(250 , 140) , cv::Scalar(0 , 0 , 255) , -1);
+    cv::circle(*img , cv::Point(330 , 90) , 50 , cv::Scalar(0 , 255 , 0) , -1);
+    cv::ellipse(*img , cv::Point(80 , 280) , cv::Size(60 , 40) , 45 , 0 ,360 , cv::Scalar(255 , 255 , 0) , 2);
+    cv::putText(*img , std::string("nihao") , cv::Point(150 , 80) , 0 , 1 , cv::Scalar(0 , 0 , 0));
+
+    cv::Point points[1][5];
+    const cv::Point *p[5];
+    points[0][0] = cv::Point(150, 270);
+    points[0][1] = cv::Point(190, 220);
+    points[0][2] = cv::Point(260, 255);
+    points[0][3] = cv::Point(224, 296);
+    points[0][4] = cv::Point(178, 316);
+    p[0] = &points[0][0];
+    const int npts = 3;
+    cv::polylines(*img , p , &npts , 1 , true , cv::Scalar( 255 , 0 , 0) , 5);
+
+    cv::imshow("window" , *img);
+    cv::waitKey(0);
+
+   std::cout << "程序正常退出 ， 记得释放指针!" << std::endl;
+   deletePtr(img , "img" , __func__ , __LINE__);
+}
+
+// ! ========== [opencv_test10()]
 int main(int argc , char *argv[])
 {
     //opencv_test1();  // 将cv::Mat 写入文件
@@ -672,6 +810,9 @@ int main(int argc , char *argv[])
     //opencv_test5(&argc , argv);  //矩阵上的掩码操作
     //opencv_test6(&argc , argv);  //迭代像素点
     //opencv_test7(&argc , argv);   // 两张图片组合显示
-    opencv_test8(&argc , argv);    // 调试图像对比度和亮度
+    //opencv_test8(&argc , argv);    // 调试图像对比度和亮度
+    //opencv_test9(); // 画图，圆 ，椭圆 ，线 ， 多边形
+    opencv_test10(); // 画图训练
+
     return 0;
 }
