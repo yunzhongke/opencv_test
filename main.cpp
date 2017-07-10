@@ -4,11 +4,12 @@
 #include <opencv2/core/utility.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 #include <string>
 #include <sstream>
 #include <vector>
 #include <chrono>
-#include "common.h"
+#include "common/common.h"
 
 template<class T>
 void deletePtr(T *ptr , const char *ptrname , const char *funname , const int line)
@@ -799,8 +800,99 @@ void opencv_test10()
    std::cout << "程序正常退出 ， 记得释放指针!" << std::endl;
    deletePtr(img , "img" , __func__ , __LINE__);
 }
-
 // ! ========== [opencv_test10()]
+
+// ! ========== [opencv_test11()]
+int display_caption(const char *caption , const char *window_name , const cv::Mat *src , cv::Mat **dst);
+int display_dst( const char *window_name , const cv::Mat *dst);
+
+void opencv_test11(const int *argc , char **argv)
+{
+     if (*argc != 2){
+         std::cout << "usage : <program> <image>" << std::endl;
+         return ;
+     }
+
+     int MAX_KERNEL_LENGTH = 31;
+     const char *window_name = "Smoothing Demo";
+     cv::Mat *src = new cv::Mat();
+     cv::Mat *dst = new cv::Mat();
+
+     *src = cv::imread(argv[1] , cv::IMREAD_COLOR);
+     cv::namedWindow(window_name , cv::WINDOW_AUTOSIZE);
+
+     if (display_caption("Original Image" , window_name , src , &dst) != 0)
+         return ;
+
+     *dst = src->clone();
+     if (display_dst( window_name , dst) != 0)
+         return ;
+
+     // 使用 均值平滑
+     if (display_caption("Homogeneous Blur" , window_name , src ,&dst) != 0)
+         return ;
+
+     //! [高期平滑]
+     for (int i = 1; i < MAX_KERNEL_LENGTH; i = i +2){
+         cv::GaussianBlur(*src , *dst , cv::Size(i , i) , 0 , 0);
+         if (display_dst( window_name , dst) != 0)
+             return ;
+     }
+     //! [高期平滑]
+
+     // 应用中值平滑
+     if (display_caption("Median Blur" , window_name , src , &dst) != 0)
+         return;
+
+     //! [中值平滑]
+     for (int i = 1; i < MAX_KERNEL_LENGTH; i = i + 2){
+         cv::medianBlur(*src , *dst , i);
+         if (display_dst( window_name , dst) != 0)
+             return;
+     }
+     //! [中值平滑]
+
+     // 应用双边过滤
+     if (display_caption("Bilateral Blur" , window_name , src , &dst) != 0)
+         return;
+
+     //! [双边过滤]
+     for ( int i = 1; i < MAX_KERNEL_LENGTH; i = i + 2){
+         cv::bilateralFilter(*src , *dst , i , i * 2 , i / 2);
+         if (display_dst( window_name , dst) != 0)
+             return ;
+     }
+     //! [双边过滤]
+
+     display_caption("End: Press a key!" , window_name , src , &dst);
+     cv::waitKey(0);
+
+     std::cout << "程序正常退出 ， 记得释放指针!" << std::endl;
+     deletePtr(src , "src" , __func__ , __LINE__);
+     deletePtr(dst , "dst" , __func__ , __LINE__);
+}
+
+int display_caption(const char *caption , const char *window_name ,  const cv::Mat *src , cv::Mat **dst)
+{
+    cv::Mat *tmp = *dst;
+    *tmp = cv::Mat::zeros(src->size() , src->type());
+    cv::putText(*tmp , caption ,
+                cv::Point(src->cols / 4 , src->rows / 2) ,
+            cv::FONT_HERSHEY_COMPLEX , 1 , cv::Scalar(0 , 0 , 255));
+    cv::imshow(window_name , *tmp);
+    int c = cv::waitKey(0);
+    return 0;
+}
+
+int display_dst( const char *window_name , const cv::Mat *dst)
+{
+    cv::imshow( window_name , *dst);
+    cv::waitKey(0);
+    return 0;
+}
+
+// ! ========== [opencv_test11()]
+
 int main(int argc , char *argv[])
 {
     //opencv_test1();  // 将cv::Mat 写入文件
@@ -812,7 +904,15 @@ int main(int argc , char *argv[])
     //opencv_test7(&argc , argv);   // 两张图片组合显示
     //opencv_test8(&argc , argv);    // 调试图像对比度和亮度
     //opencv_test9(); // 画图，圆 ，椭圆 ，线 ， 多边形
-    opencv_test10(); // 画图训练
+    //opencv_test10(); // 画图训练
+    //opencv_test11(&argc , argv); //图像模糊化
+
+    auto glambda = [](auto a , auto&& b) {
+        return a < b;
+    };
+
+    bool b = glambda(3 , 2.3);
+
 
     return 0;
 }
