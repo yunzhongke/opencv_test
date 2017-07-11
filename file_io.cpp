@@ -3,7 +3,7 @@
 #include <string>
 
 /*
- * 使用XML和YAML文件的文件输入和输出
+ * 使用XML和YAML文件的输入和输出
  *
  */
 
