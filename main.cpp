@@ -907,12 +907,5 @@ int main(int argc , char *argv[])
     //opencv_test10(); // 画图训练
     //opencv_test11(&argc , argv); //图像模糊化
 
-    auto glambda = [](auto a , auto&& b) {
-        return a < b;
-    };
-
-    bool b = glambda(3 , 2.3);
-
-
     return 0;
 }
