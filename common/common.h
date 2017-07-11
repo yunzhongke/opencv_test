@@ -3,5 +3,4 @@
 
 #define w 400
 
-
 #endif // COMMON_H
