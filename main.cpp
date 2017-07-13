@@ -10,7 +10,6 @@
 #include <vector>
 #include <chrono>
 #include "common/common.h"
-
 template<class T>
 void deletePtr(T *ptr , const char *ptrname , const char *funname , const int line)
 {
@@ -890,9 +889,113 @@ int display_dst( const char *window_name , const cv::Mat *dst)
     cv::waitKey(0);
     return 0;
 }
-
 // ! ========== [opencv_test11()]
 
+// ! ========== [opencv_test12()]
+void Erosion(int , void* ptr);
+void Dilation(int , void* ptr);
+struct param
+{
+    cv::Mat *img_src;   
+    cv::Mat *img_dst;
+    int elem;
+    int size;
+    const int max_elem = 2;
+    const int max_size = 21;
+};
+void opencv_test12(const int *argc , char **argv)
+{
+    if (*argc != 2){
+        std::cout << "usage :"
+                     "<program> <imgfile>" << std::endl;
+    }
+    cv::Mat *src = new cv::Mat();
+    cv::Mat *erosion_dst = new cv::Mat();
+    cv::Mat *dilation_dst = new cv::Mat();
+    int erosion_elem = 0;
+    int erosion_size = 0;
+    int dilation_elem = 0;
+    int dilation_size = 0;
+    
+    *src = cv::imread(argv[1] , cv::IMREAD_COLOR);
+    if (src->empty()){
+        return;
+    }
+    
+    cv::namedWindow("Erosion Demo" , cv::WINDOW_AUTOSIZE);
+    cv::namedWindow("Dilation Demo" , cv::WINDOW_AUTOSIZE);
+    cv::moveWindow("Dilation Demo" , src->cols , 0);
+    
+    param pa1;
+    pa1.img_src = src;
+    pa1.img_dst = erosion_dst;
+    pa1.elem = erosion_elem;
+    pa1.size = erosion_size;
+    cv::createTrackbar("Element:\n 0: Rect \n 1:Cross \n 2: Ellipse" , "Erosion Demo" , &pa1.elem , pa1.max_elem , Erosion , (void*)&pa1);
+    cv::createTrackbar("Kernel size:\n 2n + 1 " , "Erosion Demo" , &pa1.size , pa1.max_size , Erosion , (void*)&pa1);
+    
+    param pa2;
+    pa2.img_src = src;
+    pa2.img_dst = dilation_dst;
+    pa2.elem = dilation_elem;
+    pa2.size = dilation_size;
+    cv::createTrackbar("Element:\n 0: Rect \n 1:Cross \n 2: Ellipse" , "Dilation Demo" , &pa2.elem , pa2.max_elem , Dilation , (void*)&pa2);
+    cv::createTrackbar("Kernel size:\n 2n + 1" , "Dilation Demo" , &pa2.size , pa2.max_size , Dilation , (void*)&pa2);
+    
+    Erosion(0 , &pa1);
+    Dilation(0 , &pa2);
+    cv::waitKey(0);
+    
+    std::cout << "程序正常退出 ， 记得释放指针!" << std::endl;
+    deletePtr(src , "src" , __func__ , __LINE__);
+    deletePtr(erosion_dst , "erosion_dst" , __func__ , __LINE__);
+    deletePtr(dilation_dst , "dilation_dst" , __func__ , __LINE__);
+}
+
+void Erosion(int, void *ptr)
+{
+    param par = *(param*)ptr;
+    int erosion_type = 0;
+    if (par.elem == 0){
+        erosion_type = cv::MORPH_RECT;
+    }
+    else if (par.elem == 1){
+        erosion_type = cv::MORPH_CROSS;
+    }
+    else if (par.elem == 2){
+        erosion_type = cv::MORPH_ELLIPSE;
+    }
+    
+    cv::Mat element = cv::getStructuringElement(erosion_type ,
+                                                cv::Size(2 * par.size + 1 , 2 * par.size + 1) ,
+                                                cv::Point(par.size , par.size));
+    cv::erode(*par.img_src , *par.img_dst , element);
+    cv::imshow("Erosion Demo" , *par.img_dst);
+}
+
+void Dilation(int, void *ptr)
+{
+    param par = *(param*)ptr;
+
+    int dilation_type = 0;
+    if (par.elem == 0){
+        dilation_type = cv::MORPH_RECT;
+    }
+    else if (par.elem == 1){
+        dilation_type = cv::MORPH_CROSS;
+    }
+    else if (par.elem == 2){
+        dilation_type = cv::MORPH_CROSS;
+    }
+    
+    cv::Mat element = cv::getStructuringElement(dilation_type , 
+                                                cv::Size(2 * par.size + 1 , 2 * par.size + 1) ,
+                                                cv::Point(par.size , par.size));
+    cv::dilate(*par.img_src , *par.img_dst , element);
+    cv::imshow("Dilation Demo" , *par.img_dst);
+}
+
+// ! ========== [opencv_test12()]
 int main(int argc , char *argv[])
 {
     //opencv_test1();  // 将cv::Mat 写入文件
@@ -906,6 +1009,6 @@ int main(int argc , char *argv[])
     //opencv_test9(); // 画图，圆 ，椭圆 ，线 ， 多边形
     //opencv_test10(); // 画图训练
     //opencv_test11(&argc , argv); //图像模糊化
-
+    opencv_test12(&argc , argv); // 图像(亮区)侵蚀与扩张
     return 0;
 }
